@@ -41,5 +41,10 @@ Usage: vuls-log-converter.js [options]
 	--output, -o
 		output file name
 		--output=./output.csv or -o ./output.csv
+
+	--esEndPoint, -e
+		ElasticSearch EndPoint
+		--esEndPoint=https://hogehoge.com/ or -e https://hogehoge.com/
+
 ```
 
