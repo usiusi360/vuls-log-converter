@@ -9,8 +9,8 @@
 
 
 ## Requirements
-node.js >= latest
-
+node.js >= latest(LTS)
+npm     >= latest(LTS)
 
 ## Installation
 
