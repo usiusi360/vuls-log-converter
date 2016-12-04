@@ -10,6 +10,7 @@
 
 ## Requirements
 node.js >= latest(LTS)
+
 npm     >= latest(LTS)
 
 ## Installation
@@ -44,7 +45,6 @@ Usage: vuls-log-converter.js [options]
 
 	--esEndPoint, -e
 		ElasticSearch EndPoint
-		--esEndPoint=https://hogehoge.com/ or -e https://hogehoge.com/
-
+		--esEndPoint=http://192.168.0.1:9200/ or -e http://192.168.0.1:9200/
 ```
 
