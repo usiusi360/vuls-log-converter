@@ -4,8 +4,8 @@
 [![license](https://img.shields.io/github/license/usiusi360/zabirepo.svg?style=flat-square)](https://github.com/usiusi360/vuls-log-converter/blob/master/LICENSE.txt)
 
 ## Features
-- Converts the JSON file output by Vuls to CSV.
-- Converts the JSON file output by Vuls to bulk data of ElasticSearch. 
+- Convert Vuls's JSON file to CSV.
+- Convert Vuls's JSON file and bulk insert it into ElasticSearch.
 
 
 ## Requirements
@@ -48,3 +48,20 @@ Usage: vuls-log-converter.js [options]
 		--esEndPoint=http://192.168.0.1:9200/ or -e http://192.168.0.1:9200/
 ```
 
+## Example
+
+- Vuls JSON ⇒　CSV
+```
+# node ./vuls-log-converter.js -t csv -i /opt/vuls/results/current/ -o ./output.csv
+```
+
+- Vuls JSON ⇒　ElasticSearch
+```
+# node ./vuls-log-converter.js -t els -i /opt/vuls/results/current/ -e http://192.168.0.1:9200/
+```
+
+> + Setting up kibana
+
+> index name or pattern：vuls_index
+
+> Time-field name：ScannedAT
