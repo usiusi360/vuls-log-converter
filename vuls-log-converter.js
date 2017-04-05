@@ -43,7 +43,7 @@ const fields = [
 	//"JVN_Summary",
 	//"JVN_JvnLink",
 	//"JVN_PublishedDate",
-	//"JVN_LastModifiedDate"
+	//"JVN_LastModifiedDate",
 	"JVN_ID"
 ];
 
@@ -223,6 +223,7 @@ let createCsvData = function(data, i) {
 
 		result = json2csv({ data: data, fields: fields, hasCSVColumnTitle: false});
 	}
+	result = result + "\n";
 	return result;
 };
 
