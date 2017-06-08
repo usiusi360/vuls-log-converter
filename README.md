@@ -72,7 +72,7 @@ Usage: vulslogconv [options]
 
 By default, all items are output.
 
-To restrict the items to be output, create "config.json" and specify it in the - config option.
+To restrict the items to be output, create "config.json" with only required items and specify it with the - config option.
 
 ```
 # cat config.json 
