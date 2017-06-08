@@ -70,6 +70,7 @@ Usage: vulslogconv [options]
 ## Option
 
 By default, all items are output.
+
 To restrict the items to be output, create "config.json" and specify it in the - config option.
 
 ```
