@@ -16,20 +16,17 @@ npm     >= latest(LTS)
 ## Installation
 
 ```
-$ git clone https://github.com/usiusi360/vuls-log-converter.git
-$ cd ./vuls-log-converter
-$ npm install
+$ npm i -g vuls-log-converter
 ```
-
 
 ## Usage
 
 ```
-Usage: vuls-log-converter.js [options]
+Usage: vulslogconv [options]
 
 	--help, -h
 		Displays help information about this script
-		'vuls-log-converter.js -h' or 'vuls-log-converter.js --help'
+		'vulslogconv -h' or 'vulslogconv --help'
 
 	--type, -t
 		Output as CSV or JSON for ElasticSearch
@@ -52,12 +49,12 @@ Usage: vuls-log-converter.js [options]
 
 - Vuls JSON ⇒　CSV
 ```
-# node ./vuls-log-converter.js -t csv -i /opt/vuls/results/current/ -o ./output.csv
+# vulslogconv -t csv -i /opt/vuls/results/current/ -o ./output.csv
 ```
 
 - Vuls JSON ⇒　ElasticSearch
 ```
-# node ./vuls-log-converter.js -t els -i /opt/vuls/results/current/ -e http://192.168.0.1:9200/
+# vulslogconv -t els -i /opt/vuls/results/current/ -e http://192.168.0.1:9200/
 ```
 
 > + Setting up kibana

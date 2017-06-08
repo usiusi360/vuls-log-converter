@@ -1,17 +1,18 @@
 {
   "name": "vuls-log-converter",
-  "version": "0.1.0",
-  "description": "convert Vuls log",
-  "main": "vuls-log-converter.js",
+  "bin" : { "vulslogconv" : "bin/vuls-log-converter.js"},
+  "version": "0.1.2",
+  "description": "Convert Vuls log",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "usiusi360",
   "license": "MIT",
+  "preferGlobal": true ,
   "dependencies": {
     "argv": "0.0.2",
     "dateformat": "^1.0.12",
     "elasticsearch": "^12.1.0",
-    "json2csv": "^3.7.2"
+    "json2csv": "^3.7.3"
   }
 }

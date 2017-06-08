@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 'use strict';
 
 const fs = require('fs');
@@ -112,6 +114,11 @@ let getFlatObj = function(path) {
 
 let getPkgObj = function(target, json) {
     let result = [];
+
+    if ( json[target] === null ) {
+        console.log(`[ERROR] : target data not found.[${target}]  Please check after running "vuls report -format-json".`);
+	return;
+    }
 
     json[target].forEach(function(targetVals, j) {
         let targetPkgs;
