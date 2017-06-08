@@ -43,6 +43,7 @@ Usage: vulslogconv [options]
 	--esEndPoint, -e
 		ElasticSearch EndPoint
 		--esEndPoint=http://192.168.0.1:9200/ or -e http://192.168.0.1:9200/
+
         --config, -c
                 config file [option]
                 --config=./config.json or -c ./config.json
