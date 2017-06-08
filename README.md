@@ -43,6 +43,9 @@ Usage: vulslogconv [options]
 	--esEndPoint, -e
 		ElasticSearch EndPoint
 		--esEndPoint=http://192.168.0.1:9200/ or -e http://192.168.0.1:9200/
+        --config, -c
+                config file [option]
+                --config=./config.json or -c ./config.json
 ```
 
 ## Example
@@ -62,3 +65,53 @@ Usage: vulslogconv [options]
 > index name or pattern：vuls_index
 
 > Time-field name：ScannedAT
+
+
+## Option
+
+By default, all items are output.
+To restrict the items to be output, create "config.json" and specify it in the - config option.
+
+```
+# cat config.json 
+
+[
+    "ScannedAt",
+    "ServerName",
+    "Family",
+    "Release",
+    "Container_Name",
+    "Container_ContainerID",
+    "Platform_Name",
+    "Platform_InstanceID",
+    "CveID",
+    "Packages_Name",
+    "NVD_Score",
+    "NVD_Severity",
+    "NVD_AcessVector",
+    "NVD_AccessComplexity",
+    "NVD_Authentication",
+    "NVD_ConfidentialityImpact",
+    "NVD_IntegrityImpact",
+    "NVD_AvailabilityImpact",
+    "NVD_CweID",
+    "NVD_Summary",
+    "NVD_PublishedDate",
+    "NVD_LastModifiedDate",
+    "JVN_Score",
+    "JVN_Severity",
+    "JVN_AcessVector",
+    "JVN_AccessComplexity",
+    "JVN_Authentication",
+    "JVN_ConfidentialityImpact",
+    "JVN_IntegrityImpact",
+    "JVN_AvailabilityImpact",
+    "JVN_Title",
+    "JVN_Summary",
+    "JVN_JvnLink",
+    "JVN_PublishedDate",
+    "JVN_LastModifiedDate",
+    "JVN_ID"
+]
+
+```

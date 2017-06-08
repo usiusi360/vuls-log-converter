@@ -10,15 +10,15 @@ const argv = require('argv');
 
 const esIndexName = "vuls_index";
 const esTypeName = "vuls_type";
-const fields = [
+let fields = [
     "ScannedAt",
     "ServerName",
     "Family",
     "Release",
     "Container_Name",
-    //"Container_ContainerID",
+    "Container_ContainerID",
     "Platform_Name",
-    //"Platform_InstanceID",
+    "Platform_InstanceID",
     "CveID",
     "Packages_Name",
     "NVD_Score",
@@ -30,9 +30,9 @@ const fields = [
     "NVD_IntegrityImpact",
     "NVD_AvailabilityImpact",
     "NVD_CweID",
-    //"NVD_Summary",
-    //"NVD_PublishedDate",
-    //"NVD_LastModifiedDate",
+    "NVD_Summary",
+    "NVD_PublishedDate",
+    "NVD_LastModifiedDate",
     "JVN_Score",
     "JVN_Severity",
     "JVN_AcessVector",
@@ -41,11 +41,11 @@ const fields = [
     "JVN_ConfidentialityImpact",
     "JVN_IntegrityImpact",
     "JVN_AvailabilityImpact",
-    //"JVN_Title",
-    //"JVN_Summary",
-    //"JVN_JvnLink",
-    //"JVN_PublishedDate",
-    //"JVN_LastModifiedDate",
+    "JVN_Title",
+    "JVN_Summary",
+    "JVN_JvnLink",
+    "JVN_PublishedDate",
+    "JVN_LastModifiedDate",
     "JVN_ID"
 ];
 
@@ -74,6 +74,12 @@ argv.option([{
     type: 'string',
     description: 'ElasticSearch EndPoint',
     example: '--esEndPoint=https://hogehoge.com/ or -e https://hogehoge.com/'
+}, {
+    name: 'config',
+    short: 'c',
+    type: 'string',
+    description: 'config file [option]',
+    example: '--config=./config.json or -c ./config.json'
 }]);
 
 const args = argv.run().options;
@@ -81,6 +87,7 @@ const type = args.type;
 const input = args.input;
 const output = args.output;
 const esEndPoint = args.esEndPoint;
+const config = args.config
 
 //==============
 
@@ -359,6 +366,10 @@ let getVector = {
         console.error("[ERROR] : esEndPoint not found.");
         return;
     }
+
+   if ( config !== undefined) {
+        fields = JSON.parse(fs.readFileSync(config, 'utf8'));
+   }
 
     getFileList(input).then(function(fileList) {
         console.log("[INFO] : Convert start.");
