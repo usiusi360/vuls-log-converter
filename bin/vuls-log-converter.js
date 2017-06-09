@@ -20,7 +20,13 @@ let fields = [
     "Platform_Name",
     "Platform_InstanceID",
     "CveID",
+    "Confidence_Score",
+    "Confidence_DetectionMethod",
     "Packages_Name",
+    "Packages_Version",
+    "Packages_Release",
+    "Packages_NewVersion",
+    "Packages_NewRelease",
     "NVD_Score",
     "NVD_Severity",
     "NVD_AcessVector",
@@ -151,7 +157,13 @@ let getPkgObj = function(target, json) {
             if (fields.indexOf("Platform_Name") >= 0) { targetObj["Platform_Name"] = json.Platform.Name };
             if (fields.indexOf("Platform_InstanceID") >= 0) { targetObj["Platform_InstanceID"] = json.Platform.InstanceID };
             if (fields.indexOf("CveID") >= 0) { targetObj["CveID"] = targetVals.CveDetail.CveID };
+            if (fields.indexOf("Confidence_Score") >= 0) { targetObj["Confidence_Score"] = targetVals.Confidence.Score };
+            if (fields.indexOf("Confidence_DetectionMethod") >= 0) { targetObj["Confidence_DetectionMethod"] = targetVals.Confidence.DetectionMethod };
             if (fields.indexOf("Packages_Name") >= 0) { targetObj["Packages_Name"] = targetPkg.Name };
+            if (fields.indexOf("Packages_Version") >= 0) { targetObj["Packages_Version"] = targetPkg.Version };
+            if (fields.indexOf("Packages_Release") >= 0) { targetObj["Packages_Release"] = targetPkg.Release };
+            if (fields.indexOf("Packages_NewVersion") >= 0) { targetObj["Packages_NewVersion"] = targetPkg.NewVersion };
+            if (fields.indexOf("Packages_NewRelease") >= 0) { targetObj["Packages_NewRelease"] = targetPkg.NewRelease };
 
             if (targetVals.CveDetail.Nvd.Score !== 0) {
                 if (fields.indexOf("NVD_Score") >= 0) { targetObj["NVD_Score"] = targetVals.CveDetail.Nvd.Score };
