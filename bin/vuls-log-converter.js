@@ -7,52 +7,38 @@ const elasticsearch = require('elasticsearch');
 const json2csv = require('json2csv');
 const dateFormat = require('dateformat');
 const argv = require('argv');
+const _u = require('underscore');
 
 const esIndexName = "vuls_index";
 const esTypeName = "vuls_type";
-let fields = [
+const prioltyFlag = ["jvn", "nvd", "redhat", "ubuntu", "debian", "oracle"];
+
+const fields = [
     "ScannedAt",
-    "ServerName",
+    "Platform",
     "Family",
     "Release",
-    "Container_Name",
-    "Container_ContainerID",
-    "Platform_Name",
-    "Platform_InstanceID",
+    "ServerName",
+    "Container",
     "CveID",
-    "Confidence_Score",
-    "Confidence_DetectionMethod",
-    "Packages_Name",
-    "Packages_Version",
-    "Packages_Release",
-    "Packages_NewVersion",
-    "Packages_NewRelease",
-    "NVD_Score",
-    "NVD_Severity",
-    "NVD_AcessVector",
-    "NVD_AccessComplexity",
-    "NVD_Authentication",
-    "NVD_ConfidentialityImpact",
-    "NVD_IntegrityImpact",
-    "NVD_AvailabilityImpact",
-    "NVD_CweID",
-    "NVD_Summary",
-    "NVD_PublishedDate",
-    "NVD_LastModifiedDate",
-    "JVN_Score",
-    "JVN_Severity",
-    "JVN_AcessVector",
-    "JVN_AccessComplexity",
-    "JVN_Authentication",
-    "JVN_ConfidentialityImpact",
-    "JVN_IntegrityImpact",
-    "JVN_AvailabilityImpact",
-    "JVN_Title",
-    "JVN_Summary",
-    "JVN_JvnLink",
-    "JVN_PublishedDate",
-    "JVN_LastModifiedDate",
-    "JVN_ID"
+    "DetectionMethod",
+    "Packages",
+    "PackageVer",
+    "NewPackageVer",
+    "NotFixedYet",
+    "CweID",
+    "CVSS Score",
+    "CVSS Severity",
+    "CVSS (AV)",
+    "CVSS (AC)",
+    "CVSS (Au)",
+    "CVSS (C)",
+    "CVSS (I)",
+    "CVSS (A)",
+    "Summary",
+    // "Changelog",
+    "Published",
+    "LastModified",
 ];
 
 
@@ -80,12 +66,6 @@ argv.option([{
     type: 'string',
     description: 'ElasticSearch EndPoint',
     example: '--esEndPoint=https://hogehoge.com/ or -e https://hogehoge.com/'
-}, {
-    name: 'config',
-    short: 'c',
-    type: 'string',
-    description: 'config file [option]',
-    example: '--config=./config.json or -c ./config.json'
 }]);
 
 const args = argv.run().options;
@@ -95,9 +75,8 @@ const output = args.output;
 const esEndPoint = args.esEndPoint;
 const config = args.config
 
-//==============
 
-let getFileList = function(path) {
+const getFileList = function(path) {
     return new Promise(function(resolve, reject) {
 
         fs.readdir(path, function(err, files) {
@@ -117,95 +96,211 @@ let getFileList = function(path) {
     });
 };
 
-let getFlatObj = function(path) {
-    let result = [];
-    let json = JSON.parse(fs.readFileSync(path, 'utf8'));
-    result = result.concat(getPkgObj("KnownCves", json));
-    result = result.concat(getPkgObj("UnknownCves", json));
-    return result;
-};
-
-let getPkgObj = function(target, json) {
+const getFlatObj = function(targetObj) {
     let result = [];
 
-    if ( json[target] === null ) {
-        console.log(`[ERROR] : target data not found.[${target}]  Please check after running "vuls report -format-json".`);
-	return;
-    }
+    if (Object.keys(targetObj.ScannedCves).length === 0) {
+        let tmp_result = {
+            "ScannedAt": getFormatDate(targetObj.ScannedAt),
+            "Family": targetObj.Family,
+            "Release": targetObj.Release,
+            "CveID": "healthy",
+            "DetectionMethod": "healthy",
+            "Packages": "healthy",
+            "PackageVer": "healthy",
+            "NewPackageVer": "healthy",
+            "NotFixedYet": "healthy",
+            "CweID": "healthy",
+            "CVSS Score": "healthy",
+            "CVSS Severity": "healthy",
+            "CVSS (AV)": "healthy",
+            "CVSS (AC)": "healthy",
+            "CVSS (Au)": "healthy",
+            "CVSS (C)": "healthy",
+            "CVSS (I)": "healthy",
+            "CVSS (A)": "healthy",
+            "Summary": "healthy",
+            "Changelog": "healthy",
+            "Published": "healthy",
+            "LastModified": "healthy",
+        };
 
-    json[target].forEach(function(targetVals, j) {
-        let targetPkgs;
-        if (targetVals.CpeNames === null) {
-            targetPkgs = targetVals.Packages;
+        if (targetObj.Platform.Name !== "") {
+            tmp_result["Platform"] = targetObj.Platform.Name;
         } else {
-            if (targetVals.CpeNames.length == 0) {
-                targetPkgs = targetVals.Packages;
-            } else {
-                targetPkgs = targetVals.CpeNames;
-            }
+            tmp_result["Platform"] = "None";
         }
 
-        targetPkgs.forEach(function(targetPkg, k) {
-            let targetObj = {};
+        if (targetObj.RunningKernel.RebootRequired === true) {
+            tmp_result["ServerName"] = targetObj.ServerName + " [Reboot Required]";
+        } else {
+            tmp_result["ServerName"] = targetObj.ServerName;
+        }
 
-            if (fields.indexOf("ScannedAt") >= 0) { targetObj["ScannedAt"] = getFormatDate(json.ScannedAt) };
-            if (fields.indexOf("ServerName") >= 0) { targetObj["ServerName"] = json.ServerName };
-            if (fields.indexOf("Family") >= 0) { targetObj["Family"] = json.Family };
-            if (fields.indexOf("Release") >= 0) { targetObj["Release"] = json.Release };
-            if (fields.indexOf("Container_Name") >= 0) { targetObj["Container_Name"] = json.Container.Name };
-            if (fields.indexOf("Container_ContainerID") >= 0) { targetObj["Container_ContainerID"] = json.Container.ContainerID };
-            if (fields.indexOf("Platform_Name") >= 0) { targetObj["Platform_Name"] = json.Platform.Name };
-            if (fields.indexOf("Platform_InstanceID") >= 0) { targetObj["Platform_InstanceID"] = json.Platform.InstanceID };
-            if (fields.indexOf("CveID") >= 0) { targetObj["CveID"] = targetVals.CveDetail.CveID };
-            if (fields.indexOf("Confidence_Score") >= 0) { targetObj["Confidence_Score"] = targetVals.Confidence.Score };
-            if (fields.indexOf("Confidence_DetectionMethod") >= 0) { targetObj["Confidence_DetectionMethod"] = targetVals.Confidence.DetectionMethod };
-            if (fields.indexOf("Packages_Name") >= 0) { targetObj["Packages_Name"] = targetPkg.Name };
-            if (fields.indexOf("Packages_Version") >= 0) { targetObj["Packages_Version"] = targetPkg.Version };
-            if (fields.indexOf("Packages_Release") >= 0) { targetObj["Packages_Release"] = targetPkg.Release };
-            if (fields.indexOf("Packages_NewVersion") >= 0) { targetObj["Packages_NewVersion"] = targetPkg.NewVersion };
-            if (fields.indexOf("Packages_NewRelease") >= 0) { targetObj["Packages_NewRelease"] = targetPkg.NewRelease };
+        if (targetObj.Container.Name !== "") {
+            tmp_result["Container"] = targetObj.Container.Name;
+        } else {
+            tmp_result["Container"] = "None";
+        }
 
-            if (targetVals.CveDetail.Nvd.Score !== 0) {
-                if (fields.indexOf("NVD_Score") >= 0) { targetObj["NVD_Score"] = targetVals.CveDetail.Nvd.Score };
-                if (fields.indexOf("NVD_Severity") >= 0) { targetObj["NVD_Severity"] = getSeverity(targetVals.CveDetail.Nvd.Score) };
-                if (fields.indexOf("NVD_AcessVector") >= 0) { targetObj["NVD_AcessVector"] = targetVals.CveDetail.Nvd.Score };
-                if (fields.indexOf("NVD_AccessComplexity") >= 0) { targetObj["NVD_AccessComplexity"] = targetVals.CveDetail.Nvd.AccessComplexity };
-                if (fields.indexOf("NVD_Authentication") >= 0) { targetObj["NVD_Authentication"] = targetVals.CveDetail.Nvd.Authentication };
-                if (fields.indexOf("NVD_ConfidentialityImpact") >= 0) { targetObj["NVD_ConfidentialityImpact"] = targetVals.CveDetail.Nvd.ConfidentialityImpact };
-                if (fields.indexOf("NVD_IntegrityImpact") >= 0) { targetObj["NVD_IntegrityImpact"] = targetVals.CveDetail.Nvd.IntegrityImpact };
-                if (fields.indexOf("NVD_AvailabilityImpact") >= 0) { targetObj["NVD_AvailabilityImpact"] = targetVals.CveDetail.Nvd.AvailabilityImpact };
-                if (fields.indexOf("NVD_CweID") >= 0) { targetObj["NVD_CweID"] = targetVals.CveDetail.Nvd.CweID };
-                if (fields.indexOf("NVD_Summary") >= 0) { targetObj["NVD_Summary"] = targetVals.CveDetail.Nvd.Summary };
-                if (fields.indexOf("NVD_PublishedDate") >= 0) { targetObj["NVD_PublishedDate"] = getFormatDate(targetVals.CveDetail.Nvd.PublishedDate) };
-                if (fields.indexOf("NVD_LastModifiedDate") >= 0) { targetObj["NVD_LastModifiedDate"] = getFormatDate(targetVals.CveDetail.Nvd.LastModifiedDate) };
+        result.push(tmp_result);
+
+    } else {
+        _u.each(targetObj.ScannedCves, function(cveidObj, i) {
+            let targetNames;
+            if (isCheckNull(cveidObj.CpeNames) === false) {
+                targetNames = cveidObj.CpeNames;
+            } else {
+                targetNames = cveidObj.AffectedPackages;
             }
 
-            if (targetVals.CveDetail.Jvn.Score !== 0) {
-                if (fields.indexOf("JVN_Score") >= 0) { targetObj["JVN_Score"] = targetVals.CveDetail.Jvn.Score };
-                if (fields.indexOf("JVN_Severity") >= 0) { targetObj["JVN_Severity"] = targetVals.CveDetail.Jvn.Severity };
-                let arrayVector = getSplitArray(targetVals.CveDetail.Jvn.Vector);
-                if (fields.indexOf("JVN_AcessVector") >= 0) { targetObj["JVN_AcessVector"] = getVector.jvn(arrayVector[0]) };
-                if (fields.indexOf("JVN_AccessComplexity") >= 0) { targetObj["JVN_AccessComplexity"] = getVector.jvn(arrayVector[1]) };
-                if (fields.indexOf("JVN_Authentication") >= 0) { targetObj["JVN_Authentication"] = getVector.jvn(arrayVector[2]) };
-                if (fields.indexOf("JVN_ConfidentialityImpact") >= 0) { targetObj["JVN_ConfidentialityImpact"] = getVector.jvn(arrayVector[3]) };
-                if (fields.indexOf("JVN_IntegrityImpact") >= 0) { targetObj["JVN_IntegrityImpact"] = getVector.jvn(arrayVector[4]) };
-                if (fields.indexOf("JVN_AvailabilityImpact") >= 0) { targetObj["JVN_AvailabilityImpact"] = getVector.jvn(arrayVector[5]) };
-                if (fields.indexOf("JVN_ID") >= 0) { targetObj["JVN_ID"] = targetVals.CveDetail.Jvn.JvnID };
-                if (fields.indexOf("JVN_Title") >= 0) { targetObj["JVN_Title"] = targetVals.CveDetail.Jvn.Title };
-                if (fields.indexOf("JVN_Summary") >= 0) { targetObj["JVN_Summary"] = targetVals.CveDetail.Jvn.Summary };
-                if (fields.indexOf("JVN_JvnLink") >= 0) { targetObj["JVN_JvnLink"] = targetVals.CveDetail.Jvn.JvnLink };
-                if (fields.indexOf("JVN_PublishedDate") >= 0) { targetObj["JVN_PublishedDate"] = getFormatDate(targetVals.CveDetail.Jvn.PublishedDate) };
-                if (fields.indexOf("JVN_LastModifiedDate") >= 0) { targetObj["JVN_LastModifiedDate"] = getFormatDate(targetVals.CveDetail.Jvn.LastModifiedDate) };
-            }
+            _u.each(targetNames, function(packs, j) {
+                var pkgName, NotFixedYet;
+                if (packs.Name === undefined) {
+                    pkgName = packs;
+                    NotFixedYet = "Unknown";
+                } else {
+                    pkgName = packs.Name;
+                    NotFixedYet = packs.NotFixedYet;
+                }
 
-            result.push(targetObj);
+                let pkgInfo = targetObj.Packages[pkgName];
+                if (pkgName.indexOf('cpe:/') === -1 && pkgInfo === undefined) {
+                    return;
+                }
+
+                let tmp_result = {
+                    "ScannedAt": getFormatDate(targetObj.ScannedAt),
+                    "Family": targetObj.Family,
+                    "Release": targetObj.Release,
+                    // "CveID": "CHK-cveid-" + cveidObj.CveID,
+                    "CveID": cveidObj.CveID,
+                    "Packages": pkgName,
+                    "NotFixedYet": NotFixedYet,
+                };
+
+                if (targetObj.RunningKernel.RebootRequired === true) {
+                    tmp_result["ServerName"] = targetObj.ServerName + " [Reboot Required]";
+                } else {
+                    tmp_result["ServerName"] = targetObj.ServerName;
+                }
+
+                if (cveidObj.CveContents.nvd !== undefined) {
+                    tmp_result["CweID"] = cveidObj.CveContents.nvd.CweID;
+                } else {
+                    tmp_result["CweID"] = "None";
+                }
+
+                if (targetObj.Platform.Name !== "") {
+                    tmp_result["Platform"] = targetObj.Platform.Name;
+                } else {
+                    tmp_result["Platform"] = "None";
+                }
+
+                if (targetObj.Container.Name !== "") {
+                    tmp_result["Container"] = targetObj.Container.Name;
+                } else {
+                    tmp_result["Container"] = "None";
+                }
+
+                var DetectionMethod = cveidObj.Confidence.DetectionMethod;
+                tmp_result["DetectionMethod"] = DetectionMethod;
+                if (DetectionMethod === "ChangelogExactMatch") {
+                    tmp_result["Changelog"] = "CHK-changelog-" + cveidObj.CveID + "," + targetObj.ScannedAt + "," + targetObj.ServerName + "," + targetObj.Container.Name + "," + pkgName;
+                } else {
+                    tmp_result["Changelog"] = "None";
+                }
+
+                if (pkgInfo !== undefined) {
+                    if (pkgInfo.Version !== "") {
+                        tmp_result["PackageVer"] = pkgInfo.Version + "-" + pkgInfo.Release;
+                    } else {
+                        tmp_result["PackageVer"] = "None";
+                    }
+
+                    if (pkgInfo.NewVersion !== "") {
+                        tmp_result["NewPackageVer"] = pkgInfo.NewVersion + "-" + pkgInfo.NewRelease;
+                    } else {
+                        tmp_result["NewPackageVer"] = "None";
+                    }
+                } else {
+                    // ===for cpe
+                    tmp_result["PackageVer"] = "Unknown";
+                    tmp_result["NewPackageVer"] = "Unknown";
+                }
+
+
+                let getCvss = function(target) {
+                    if (cveidObj.CveContents[target] === undefined) {
+                        return false;
+                    }
+
+                    if (cveidObj.CveContents[target].Cvss2Score === 0 & cveidObj.CveContents[target].Cvss3Score === 0) {
+                        return false;
+                    }
+
+                    if (cveidObj.CveContents[target].Cvss2Score !== 0) {
+                        tmp_result["CVSS Score"] = cveidObj.CveContents[target].Cvss2Score;
+                        tmp_result["CVSS Severity"] = getSeverityV2(cveidObj.CveContents[target].Cvss2Score);
+                        tmp_result["CVSS Score Type"] = target;
+                    } else if (cveidObj.CveContents[target].Cvss3Score !== 0) {
+                        tmp_result["CVSS Score"] = cveidObj.CveContents[target].Cvss3Score;
+                        tmp_result["CVSS Severity"] = getSeverityV3(cveidObj.CveContents[target].Cvss3Score);
+                        tmp_result["CVSS Score Type"] = target + "V3";
+                    }
+
+                    tmp_result["Summary"] = cveidObj.CveContents[target].Summary;
+                    tmp_result["Published"] = getFormatDate(cveidObj.CveContents[target].Published);
+                    tmp_result["LastModified"] = getFormatDate(cveidObj.CveContents[target].LastModified);
+
+                    if (cveidObj.CveContents[target].Cvss2Vector !== "") { //ex) CVE-2016-5483
+                        var arrayVector = getSplitArray(cveidObj.CveContents[target].Cvss2Vector);
+                        tmp_result["CVSS (AV)"] = getVectorV2.cvss(arrayVector[0])[0];
+                        tmp_result["CVSS (AC)"] = getVectorV2.cvss(arrayVector[1])[0];
+                        tmp_result["CVSS (Au)"] = getVectorV2.cvss(arrayVector[2])[0];
+                        tmp_result["CVSS (C)"] = getVectorV2.cvss(arrayVector[3])[0];
+                        tmp_result["CVSS (I)"] = getVectorV2.cvss(arrayVector[4])[0];
+                        tmp_result["CVSS (A)"] = getVectorV2.cvss(arrayVector[5])[0];
+                    } else {
+                        tmp_result["CVSS (AV)"] = "Unknown";
+                        tmp_result["CVSS (AC)"] = "Unknown";
+                        tmp_result["CVSS (Au)"] = "Unknown";
+                        tmp_result["CVSS (C)"] = "Unknown";
+                        tmp_result["CVSS (I)"] = "Unknown";
+                        tmp_result["CVSS (A)"] = "Unknown";
+                    }
+                    return true;
+                };
+
+                let flag = false;
+                prioltyFlag.forEach(function(i_val, i) {
+                    if (flag !== true) {
+                        flag = getCvss(i_val);
+                    }
+                });
+
+                if (flag === false) {
+                    tmp_result["Summary"] = "Unknown";
+                    tmp_result["CVSS Score"] = "Unknown";
+                    tmp_result["CVSS Severity"] = "Unknown";
+                    tmp_result["CVSS Score Type"] = "Unknown";
+                    tmp_result["CVSS (AV)"] = "Unknown";
+                    tmp_result["CVSS (AC)"] = "Unknown";
+                    tmp_result["CVSS (Au)"] = "Unknown";
+                    tmp_result["CVSS (C)"] = "Unknown";
+                    tmp_result["CVSS (I)"] = "Unknown";
+                    tmp_result["CVSS (A)"] = "Unknown";
+                }
+
+                result.push(tmp_result);
+            });
         });
-    });
+    }
 
     return result;
 };
 
-let doEsPostData = function(data) {
+const doEsPostData = function(data) {
     let client = new elasticsearch.Client({
         host: esEndPoint,
         log: 'info',
@@ -227,7 +322,7 @@ let doEsPostData = function(data) {
 
 };
 
-let createEsPostData = function(data) {
+const createEsPostData = function(data) {
     let result = [];
     let index = { index: {} };
 
@@ -239,7 +334,7 @@ let createEsPostData = function(data) {
     return result;
 };
 
-let createCsvData = function(data, i) {
+const createCsvData = function(data, i) {
     let result;
     if (i === 0) {
         result = json2csv({ data: data, fields: fields, hasCSVColumnTitle: true });
@@ -251,112 +346,240 @@ let createCsvData = function(data, i) {
     return result;
 };
 
-let outputData = function(data) {
+const outputData = function(data) {
     fs.appendFileSync(output, data, 'utf8', function(err) {
         console.log(err);
     });
 };
 
-let getSplitArray = function(full_vector) {
-    return full_vector.replace(/\(|\)/g, '').split("/");
-};
-
-let getFormatDate = function(date) {
+const getFormatDate = function(date) {
     return dateFormat(date, "yyyy/mm/dd HH:MM:ss")
 };
 
-let getSeverity = function(Score) {
+
+// ---- copy from https://github.com/usiusi360/vulsrepo/tree/master/dist/js/vulsrepo_common.js
+const isCheckNull = function(o) {
+    if (o === undefined) {
+        return true;
+    } else if (o === null) {
+        return true;
+    } else if (o.length === 0) {
+        return true;
+    }
+    return false;
+}
+
+const getSplitArray = function(full_vector) {
+    return full_vector.replace(/\(|\)/g, '').split("/");
+};
+
+const getSeverityV2 = function(Score) {
     if (Score >= 7.0) {
         return "High";
-    } else if ((Score < 7.0) && (Score >= 4.0)) {
+    } else if ((Score <= 6.9) && (Score >= 4.0)) {
         return "Medium";
-    } else if ((Score < 4.0)) {
+    } else if ((Score <= 3.9) && (Score >= 0.1)) {
         return "Low";
+    } else if (Score == 0) {
+        return "None";
     }
 };
 
-let getVector = {
+const getSeverityV3 = function(Score) {
+    if (Score >= 9.0) {
+        return "Critical";
+    } else if ((Score <= 8.9) && (Score >= 7.0)) {
+        return "High";
+    } else if ((Score <= 6.9) && (Score >= 4.0)) {
+        return "Medium";
+    } else if ((Score <= 3.9) && (Score >= 0.1)) {
+        return "Low";
+    } else if (Score == 0) {
+        return "None";
+    }
+};
 
-    jvn: function(vector) {
-        let subscore = vector.split(":");
+const getVectorV2 = {
+    cvss: function(vector) {
+        const subscore = vector.split(":");
 
         switch (subscore[0]) {
             case 'AV':
                 switch (subscore[1]) {
                     case 'L':
-                        return "LOCAL";
+                        return Array("LOCAL", 1);
                         break;
                     case 'A':
-                        return "ADJACENT_NETWORK";
+                        return Array("ADJACENT_NETWORK", 2);
                         break;
                     case 'N':
-                        return "NETWORK";
+                        return Array("NETWORK", 3);
                         break;
                 }
             case 'AC':
                 switch (subscore[1]) {
                     case 'H':
-                        return "HIGH";
+                        return Array("HIGH", 1);
                         break;
                     case 'M':
-                        return "MEDIUM";
+                        return Array("MEDIUM", 2);
                         break;
                     case 'L':
-                        return "LOW";
+                        return Array("LOW", 3);
                         break;
                 }
             case 'Au':
                 switch (subscore[1]) {
-                    case 'N':
-                        return "NONE";
+                    case 'M':
+                        return Array("MULTIPLE_INSTANCES", 1);
                         break;
                     case 'S':
-                        return "SINGLE_INSTANCE";
+                        return Array("SINGLE_INSTANCE", 2);
                         break;
-                    case 'M':
-                        return "MULTIPLE_INSTANCES";
+                    case 'N':
+                        return Array("NONE", 3);
                         break;
                 }
             case 'C':
                 switch (subscore[1]) {
                     case 'N':
-                        return "NONE";
+                        return Array("NONE", 1);
                         break;
                     case 'P':
-                        return "PARTIAL";
+                        return Array("PARTIAL", 2);
                         break;
                     case 'C':
-                        return "COMPLETE";
+                        return Array("COMPLETE", 3);
                         break;
                 }
             case 'I':
                 switch (subscore[1]) {
                     case 'N':
-                        return "NONE";
+                        return Array("NONE", 1);
                         break;
                     case 'P':
-                        return "PARTIAL";
+                        return Array("PARTIAL", 2);
                         break;
                     case 'C':
-                        return "COMPLETE";
+                        return Array("COMPLETE", 3);
                         break;
                 }
             case 'A':
                 switch (subscore[1]) {
                     case 'N':
-                        return "NONE";
+                        return Array("NONE", 1);
                         break;
                     case 'P':
-                        return "PARTIAL";
+                        return Array("PARTIAL", 2);
                         break;
                     case 'C':
-                        return "COMPLETE";
+                        return Array("COMPLETE", 3);
                         break;
                 }
         }
     }
-
 };
+
+const getVectorV3 = {
+    cvss: function(vector) {
+        const subscore = vector.split(":");
+
+        switch (subscore[0]) {
+            case 'AV':
+                switch (subscore[1]) {
+                    case 'P':
+                        return Array("PHYSICAL", 1);
+                        break;
+                    case 'L':
+                        return Array("LOCAL", 2);
+                        break;
+                    case 'A':
+                        return Array("ADJACENT_NETWORK", 3);
+                        break;
+                    case 'N':
+                        return Array("NETWORK", 4);
+                        break;
+                }
+            case 'AC':
+                switch (subscore[1]) {
+                    case 'H':
+                        return Array("HIGH", 1);
+                        break;
+                    case 'L':
+                        return Array("LOW", 3);
+                        break;
+                }
+            case 'PR':
+                switch (subscore[1]) {
+                    case 'H':
+                        return Array("HIGH", 1);
+                        break;
+                    case 'L':
+                        return Array("LOW", 2);
+                        break;
+                    case 'N':
+                        return Array("NONE", 3);
+                        break;
+                }
+            case 'UI':
+                switch (subscore[1]) {
+                    case 'R':
+                        return Array("REQUIRED", 1);
+                        break;
+                    case 'N':
+                        return Array("NONE", 3);
+                        break;
+                }
+            case 'S':
+                switch (subscore[1]) {
+                    case 'U':
+                        return Array("UNCHANGED", 1);
+                        break;
+                    case 'C':
+                        return Array("CHANGED", 3);
+                        break;
+                }
+            case 'C':
+                switch (subscore[1]) {
+                    case 'N':
+                        return Array("NONE", 1);
+                        break;
+                    case 'L':
+                        return Array("LOW", 2);
+                        break;
+                    case 'H':
+                        return Array("HIGH", 3);
+                        break;
+                }
+            case 'I':
+                switch (subscore[1]) {
+                    case 'N':
+                        return Array("NONE", 1);
+                        break;
+                    case 'L':
+                        return Array("LOW", 2);
+                        break;
+                    case 'H':
+                        return Array("HIGH", 3);
+                        break;
+                }
+            case 'A':
+                switch (subscore[1]) {
+                    case 'N':
+                        return Array("NONE", 1);
+                        break;
+                    case 'L':
+                        return Array("LOW", 2);
+                        break;
+                    case 'H':
+                        return Array("HIGH", 3);
+                        break;
+                }
+        }
+    }
+};
+// -------------------------------------------
+
 
 (function() {
     if (type !== "csv" && type !== "els") {
@@ -379,20 +602,18 @@ let getVector = {
         return;
     }
 
-   if ( config !== undefined) {
-        fields = JSON.parse(fs.readFileSync(config, 'utf8'));
-   }
-
     getFileList(input).then(function(fileList) {
         console.log("[INFO] : Convert start.");
 
         let num = 0;
         let tmp_array = [];
         fileList.forEach(function(path, i) {
-            let data = getFlatObj(path);
+            let targetObj = JSON.parse(fs.readFileSync(path, 'utf8'));
+            let data = getFlatObj(targetObj);
             if (type === "csv") {
                 outputData(createCsvData(data, i));
-            } else if (type === "els") {
+            } else
+            if (type === "els") {
                 doEsPostData(createEsPostData(data))
 
                 // tmp_array.push(createEsPostData(data));

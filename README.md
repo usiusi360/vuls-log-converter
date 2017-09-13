@@ -44,10 +44,6 @@ Usage: vulslogconv [options]
 		ElasticSearch EndPoint
 		--esEndPoint=http://192.168.0.1:9200/ or -e http://192.168.0.1:9200/
 
-	--config, -c
-		config file [option]
-		--config=./config.json or -c ./config.json
-
 ```
 
 ## Example
@@ -69,58 +65,34 @@ Usage: vulslogconv [options]
 > Time-field name：ScannedAT
 
 
-## Option
+## OutPut Columns
 
 By default, all items are output.
 
-To restrict the items to be output, create "config.json" with only required items and specify it with the - config option.
-
 ```
-# cat config.json 
-
-[
-    "ScannedAt",
-    "ServerName",
-    "Family",
-    "Release",
-    "Container_Name",
-    "Container_ContainerID",
-    "Platform_Name",
-    "Platform_InstanceID",
-    "CveID",
-    "Confidence_Score",
-    "Confidence_DetectionMethod",
-    "Packages_Name",
-    "Packages_Version",
-    "Packages_Release",
-    "Packages_NewVersion",
-    "Packages_NewRelease",
-    "NVD_Score",
-    "NVD_Severity",
-    "NVD_AcessVector",
-    "NVD_AccessComplexity",
-    "NVD_Authentication",
-    "NVD_ConfidentialityImpact",
-    "NVD_IntegrityImpact",
-    "NVD_AvailabilityImpact",
-    "NVD_CweID",
-    "NVD_Summary",
-    "NVD_PublishedDate",
-    "NVD_LastModifiedDate",
-    "JVN_Score",
-    "JVN_Severity",
-    "JVN_AcessVector",
-    "JVN_AccessComplexity",
-    "JVN_Authentication",
-    "JVN_ConfidentialityImpact",
-    "JVN_IntegrityImpact",
-    "JVN_AvailabilityImpact",
-    "JVN_Title",
-    "JVN_Summary",
-    "JVN_JvnLink",
-    "JVN_PublishedDate",
-    "JVN_LastModifiedDate",
-    "JVN_ID"
-]
-
+    "ScannedAt"
+    "Platform"
+    "Container"
+    "ServerName"
+    "Family"
+    "Release"
+    "CveID"
+    "DetectionMethod"
+    "Packages"
+    "PackageVer"
+    "NewPackageVer"
+    "NotFixedYet"
+    "CweID"
+    "CVSS Score"
+    "CVSS Severity"
+    "CVSS (AV)"
+    "CVSS (AC)"
+    "CVSS (Au)"
+    "CVSS (C)"
+    "CVSS (I)"
+    "CVSS (A)"
+    "Summary"
+    "Changelog"
+    "PublishedDate"
+    "LastModifiedDate"
 ```
