@@ -1,7 +1,7 @@
 {
   "name": "vuls-log-converter",
   "description": "Convert Vuls log",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "author": "usiusi360",
   "license": "MIT",
   "repository": {
