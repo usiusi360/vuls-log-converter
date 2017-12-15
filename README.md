@@ -14,13 +14,11 @@ node.js >= latest(LTS)
 npm     >= latest(LTS)
 
 ## Installation
-
 ```
-$ npm i -g vuls-log-converter
+# npm i -g vuls-log-converter
 ```
 
 ## Usage
-
 ```
 Usage: vulslogconv [options]
 
@@ -46,16 +44,24 @@ Usage: vulslogconv [options]
 
 ```
 
+## Report in JSON format with Vuls
+
+You need to run report processing in Vuls before conversion
+
+```
+$ vuls report --format-json
+```
+
 ## Example
 
-- Vuls JSON ⇒　CSV
+##### Vuls JSON ⇒　CSV
 ```
-# vulslogconv -t csv -i /opt/vuls/results/current/ -o ./output.csv
+$ vulslogconv -t csv -i /opt/vuls/results/current/ -o ./output.csv
 ```
 
-- Vuls JSON ⇒　ElasticSearch
+##### Vuls JSON ⇒　ElasticSearch
 ```
-# vulslogconv -t els -i /opt/vuls/results/current/ -e http://192.168.0.1:9200/
+$ vulslogconv -t els -i /opt/vuls/results/current/ -e http://192.168.0.1:9200/
 ```
 
 > + Setting up kibana
