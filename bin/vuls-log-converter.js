@@ -99,11 +99,11 @@ const getFileList = function(path) {
 const getFlatObj = function(targetObj) {
     let result = [];
 
-    if (Object.keys(targetObj.ScannedCves).length === 0) {
+    if (Object.keys(targetObj.scannedCves).length === 0) {
         let tmp_result = {
-            "ScannedAt": getFormatDate(targetObj.ScannedAt),
-            "Family": targetObj.Family,
-            "Release": targetObj.Release,
+            "ScannedAt": getFormatDate(targetObj.scannedAt),
+            "Family": targetObj.family,
+            "Release": targetObj.release,
             "CveID": "healthy",
             "DetectionMethod": "healthy",
             "Packages": "healthy",
@@ -125,20 +125,20 @@ const getFlatObj = function(targetObj) {
             "LastModified": "healthy",
         };
 
-        if (targetObj.Platform.Name !== "") {
-            tmp_result["Platform"] = targetObj.Platform.Name;
+        if (targetObj.platform.name !== "") {
+            tmp_result["Platform"] = targetObj.platform.name;
         } else {
             tmp_result["Platform"] = "None";
         }
 
-        if (targetObj.RunningKernel.RebootRequired === true) {
-            tmp_result["ServerName"] = targetObj.ServerName + " [Reboot Required]";
+        if (targetObj.runningKernel.rebootRequired === true) {
+            tmp_result["ServerName"] = targetObj.serverName + " [Reboot Required]";
         } else {
-            tmp_result["ServerName"] = targetObj.ServerName;
+            tmp_result["ServerName"] = targetObj.serverName;
         }
 
-        if (targetObj.Container.Name !== "") {
-            tmp_result["Container"] = targetObj.Container.Name;
+        if (targetObj.container.name !== "") {
+            tmp_result["Container"] = targetObj.container.name;
         } else {
             tmp_result["Container"] = "None";
         }
@@ -146,80 +146,81 @@ const getFlatObj = function(targetObj) {
         result.push(tmp_result);
 
     } else {
-        _u.each(targetObj.ScannedCves, function(cveidObj, i) {
+        _u.each(targetObj.scannedCves, function(cveidObj, i) {
             let targetNames;
-            if (isCheckNull(cveidObj.CpeNames) === false) {
-                targetNames = cveidObj.CpeNames;
+            if (isCheckNull(cveidObj.cpeNames) === false) {
+                targetNames = cveidObj.cpeNames;
             } else {
-                targetNames = cveidObj.AffectedPackages;
+                targetNames = cveidObj.affectedPackages;
             }
 
             _u.each(targetNames, function(packs, j) {
+
                 var pkgName, NotFixedYet;
-                if (packs.Name === undefined) {
+                if (packs.name === undefined) {
                     pkgName = packs;
                     NotFixedYet = "Unknown";
                 } else {
-                    pkgName = packs.Name;
-                    NotFixedYet = packs.NotFixedYet;
+                    pkgName = packs.name;
+                    NotFixedYet = packs.notFixedYet;
                 }
 
-                let pkgInfo = targetObj.Packages[pkgName];
+                let pkgInfo = targetObj.packages[pkgName];
                 if (pkgName.indexOf('cpe:/') === -1 && pkgInfo === undefined) {
                     return;
                 }
 
                 let tmp_result = {
-                    "ScannedAt": getFormatDate(targetObj.ScannedAt),
-                    "Family": targetObj.Family,
-                    "Release": targetObj.Release,
+                    "ScannedAt": getFormatDate(targetObj.scannedAt),
+                    "Family": targetObj.family,
+                    "Release": targetObj.release,
                     // "CveID": "CHK-cveid-" + cveidObj.CveID,
-                    "CveID": cveidObj.CveID,
+                    "CveID": cveidObj.cveID,
                     "Packages": pkgName,
                     "NotFixedYet": NotFixedYet,
                 };
 
-                if (targetObj.RunningKernel.RebootRequired === true) {
-                    tmp_result["ServerName"] = targetObj.ServerName + " [Reboot Required]";
+                if (targetObj.runningKernel.rebootRequired === true) {
+                    tmp_result["ServerName"] = targetObj.serverName + " [Reboot Required]";
                 } else {
-                    tmp_result["ServerName"] = targetObj.ServerName;
+                    tmp_result["ServerName"] = targetObj.serverName;
                 }
 
-                if (cveidObj.CveContents.nvd !== undefined) {
-                    tmp_result["CweID"] = cveidObj.CveContents.nvd.CweID;
+                if (cveidObj.cveContents.nvd !== undefined) {
+                    tmp_result["CweID"] = cveidObj.cveContents.nvd.cweID;
                 } else {
                     tmp_result["CweID"] = "None";
                 }
 
-                if (targetObj.Platform.Name !== "") {
-                    tmp_result["Platform"] = targetObj.Platform.Name;
+                if (targetObj.platform.name !== "") {
+                    tmp_result["Platform"] = targetObj.platform.name;
                 } else {
                     tmp_result["Platform"] = "None";
                 }
 
-                if (targetObj.Container.Name !== "") {
-                    tmp_result["Container"] = targetObj.Container.Name;
+                if (targetObj.container.name !== "") {
+                    tmp_result["Container"] = targetObj.container.name;
                 } else {
                     tmp_result["Container"] = "None";
                 }
 
-                var DetectionMethod = cveidObj.Confidence.DetectionMethod;
+                var DetectionMethod = cveidObj.confidences.detectionMethod;
                 tmp_result["DetectionMethod"] = DetectionMethod;
                 if (DetectionMethod === "ChangelogExactMatch") {
-                    tmp_result["Changelog"] = "CHK-changelog-" + cveidObj.CveID + "," + targetObj.ScannedAt + "," + targetObj.ServerName + "," + targetObj.Container.Name + "," + pkgName;
+                    tmp_result["Changelog"] = "CHK-changelog-" + cveidObj.cveID + "," + targetObj.scannedAt + "," + targetObj.serverName + "," + targetObj.container.name + "," + pkgName;
                 } else {
                     tmp_result["Changelog"] = "None";
                 }
 
                 if (pkgInfo !== undefined) {
-                    if (pkgInfo.Version !== "") {
-                        tmp_result["PackageVer"] = pkgInfo.Version + "-" + pkgInfo.Release;
+                    if (pkgInfo.version !== "") {
+                        tmp_result["PackageVer"] = pkgInfo.version + "-" + pkgInfo.release;
                     } else {
                         tmp_result["PackageVer"] = "None";
                     }
 
-                    if (pkgInfo.NewVersion !== "") {
-                        tmp_result["NewPackageVer"] = pkgInfo.NewVersion + "-" + pkgInfo.NewRelease;
+                    if (pkgInfo.newVersion !== "") {
+                        tmp_result["NewPackageVer"] = pkgInfo.newVersion + "-" + pkgInfo.newRelease;
                     } else {
                         tmp_result["NewPackageVer"] = "None";
                     }
@@ -231,30 +232,30 @@ const getFlatObj = function(targetObj) {
 
 
                 let getCvss = function(target) {
-                    if (cveidObj.CveContents[target] === undefined) {
+                    if (cveidObj.cveContents[target] === undefined) {
                         return false;
                     }
 
-                    if (cveidObj.CveContents[target].Cvss2Score === 0 & cveidObj.CveContents[target].Cvss3Score === 0) {
+                    if (cveidObj.cveContents[target].cvss2Score === 0 & cveidObj.cveContents[target].cvss3Score === 0) {
                         return false;
                     }
 
-                    if (cveidObj.CveContents[target].Cvss2Score !== 0) {
-                        tmp_result["CVSS Score"] = cveidObj.CveContents[target].Cvss2Score;
-                        tmp_result["CVSS Severity"] = getSeverityV2(cveidObj.CveContents[target].Cvss2Score);
+                    if (cveidObj.cveContents[target].cvss2Score !== 0) {
+                        tmp_result["CVSS Score"] = cveidObj.cveContents[target].cvss2Score;
+                        tmp_result["CVSS Severity"] = getSeverityV2(cveidObj.cveContents[target].cvss2Score);
                         tmp_result["CVSS Score Type"] = target;
-                    } else if (cveidObj.CveContents[target].Cvss3Score !== 0) {
-                        tmp_result["CVSS Score"] = cveidObj.CveContents[target].Cvss3Score;
-                        tmp_result["CVSS Severity"] = getSeverityV3(cveidObj.CveContents[target].Cvss3Score);
+                    } else if (cveidObj.cveContents[target].cvss3Score !== 0) {
+                        tmp_result["CVSS Score"] = cveidObj.cveContents[target].cvss3Score;
+                        tmp_result["CVSS Severity"] = getSeverityV3(cveidObj.cveContents[target].cvss3Score);
                         tmp_result["CVSS Score Type"] = target + "V3";
                     }
 
-                    tmp_result["Summary"] = cveidObj.CveContents[target].Summary;
-                    tmp_result["Published"] = getFormatDate(cveidObj.CveContents[target].Published);
-                    tmp_result["LastModified"] = getFormatDate(cveidObj.CveContents[target].LastModified);
+                    tmp_result["Summary"] = cveidObj.cveContents[target].summary;
+                    tmp_result["Published"] = getFormatDate(cveidObj.cveContents[target].published);
+                    tmp_result["LastModified"] = getFormatDate(cveidObj.cveContents[target].lastModified);
 
-                    if (cveidObj.CveContents[target].Cvss2Vector !== "") { //ex) CVE-2016-5483
-                        var arrayVector = getSplitArray(cveidObj.CveContents[target].Cvss2Vector);
+                    if (cveidObj.cveContents[target].cvss2Vector !== "") { //ex) CVE-2016-5483
+                        var arrayVector = getSplitArray(cveidObj.cveContents[target].cvss2Vector);
                         tmp_result["CVSS (AV)"] = getVectorV2.cvss(arrayVector[0])[0];
                         tmp_result["CVSS (AC)"] = getVectorV2.cvss(arrayVector[1])[0];
                         tmp_result["CVSS (Au)"] = getVectorV2.cvss(arrayVector[2])[0];
